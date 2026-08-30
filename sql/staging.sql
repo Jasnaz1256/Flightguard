@@ -1,0 +1,32 @@
+DROP TABLE IF EXISTS flights_staging;
+
+CREATE TABLE flights_staging(
+    year TEXT, quarter TEXT, month TEXT, day_of_month TEXT, day_of_week TEXT,
+    fl_date_raw TEXT, carrier TEXT, dot_id TEXT, iata_code TEXT, tail_num TEXT,
+    flight_num TEXT, origin_airport_id TEXT, origin_airport_seq_id TEXT,
+    origin_city_market_id TEXT, origin TEXT, origin_city_name TEXT, origin_state TEXT,
+    origin_state_fips TEXT, origin_state_name TEXT, origin_wac TEXT, dest_airport_id TEXT,
+    dest_airport_seq_id TEXT, dest_city_market_id TEXT, dest TEXT, dest_city_name TEXT,
+    dest_state TEXT, dest_state_fips TEXT, dest_state_name TEXT, dest_wac TEXT,
+    crs_dep_time TEXT, dep_time TEXT, dep_delay TEXT, dep_delay_minutes TEXT,
+    dep_del15 TEXT, departure_delay_groups TEXT, dep_time_blk TEXT, taxi_out TEXT,
+    wheels_off TEXT, wheels_on TEXT, taxi_in TEXT, crs_arr_time TEXT, arr_time TEXT,
+    arr_delay TEXT, arr_delay_minutes TEXT, arr_del15 TEXT, arrival_delay_groups TEXT,
+    arr_time_blk TEXT, cancelled TEXT, cancellation_code TEXT, diverted TEXT,
+    crs_elapsed_time TEXT, actual_elapsed_time TEXT, air_time TEXT, flights_count TEXT,
+    distance TEXT, distance_group TEXT, carrier_delay TEXT, weather_delay TEXT,
+    nas_delay TEXT, security_delay TEXT, late_aircraft_delay TEXT, first_dep_time TEXT,
+    total_add_gtime TEXT, longest_add_gtime TEXT, div_airport_landings TEXT,
+    div_reached_dest TEXT, div_actual_elapsed_time TEXT, div_arr_delay TEXT, div_distance TEXT,
+    div1_airport TEXT, div1_airport_id TEXT, div1_airport_seq_id TEXT, div1_wheels_on TEXT,
+    div1_total_gtime TEXT, div1_longest_gtime TEXT, div1_wheels_off TEXT, div1_tail_num TEXT,
+    div2_airport TEXT, div2_airport_id TEXT, div2_airport_seq_id TEXT, div2_wheels_on TEXT,
+    div2_total_gtime TEXT, div2_longest_gtime TEXT, div2_wheels_off TEXT, div2_tail_num TEXT,
+    div3_airport TEXT, div3_airport_id TEXT, div3_airport_seq_id TEXT, div3_wheels_on TEXT,
+    div3_total_gtime TEXT, div3_longest_gtime TEXT, div3_wheels_off TEXT, div3_tail_num TEXT,
+    div4_airport TEXT, div4_airport_id TEXT, div4_airport_seq_id TEXT, div4_wheels_on TEXT,
+    div4_total_gtime TEXT, div4_longest_gtime TEXT, div4_wheels_off TEXT, div4_tail_num TEXT,
+    div5_airport TEXT, div5_airport_id TEXT, div5_airport_seq_id TEXT, div5_wheels_on TEXT,
+    div5_total_gtime TEXT, div5_longest_gtime TEXT, div5_wheels_off TEXT, div5_tail_num TEXT,
+    trailing_extra TEXT
+);
