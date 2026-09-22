@@ -11,11 +11,11 @@ SELECT
     NULLIF(crs_arr_time, '')::INT,
     NULLIF(dep_time, '')::INT,
     NULLIF(arr_time, '')::INT,
-    NULLIF(dep_delay_minutes, '')::FLOAT,
-    NULLIF(arr_delay_minutes, '')::FLOAT,
+    NULLIF(dep_delay, '')::FLOAT,
+    NULLIF(arr_delay, '')::FLOAT,
     cancelled::NUMERIC::INT,
     tail_num,
     flight_num
 FROM flights_staging
 WHERE cancelled::NUMERIC::INT = 0
-AND arr_delay_minutes <> '';
+AND arr_delay <> '';

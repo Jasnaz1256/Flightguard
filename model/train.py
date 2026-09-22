@@ -1,67 +1,102 @@
 import joblib
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score, average_precision_score, brier_score_loss
-from xgboost import XGBClassifier
 
-FEATURES = [
-    "inbound_arr_delay", "inbound_dep_delay", "buffer_minutes", "carrier_ontime_rate", "airport_hourly_volume", "dep_hour", "day_of_week"]
-TARGET = "missed_connection"
+from sklearn.metrics import mean_absolute_error
+from xgboost import XGBRegressor
+
+CATEGORICAL = ['carrier', 'origin', 'dest', 'route']
+
+NUMERIC = ['dep_hour', 'day_of_week', 'month', 'leg_number', 'scheduled_turnaround',
+           'carrier_avg_delay', 'route_avg_delay', 'origin_avg_delay', 'origin_hourly_volume',]
+
+QUANTILES = [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
 
 def load_data():
-    df = pd.read_parquet("data/features.parquet")
-    df["fl_date"] = pd.to_datetime(df["fl_date"])
-    df = df.sort_values("fl_date")
+    df = pd.read_parquet('data/flight_features.parquet')
+    df['fl_date'] = pd.to_datetime(df['fl_date'])
 
-    cutoff = pd.Timestamp("2026-03-01")
-    train = df[df["fl_date"] < cutoff]
-    test = df[df["fl_date"] >= cutoff]
+    encoders = {}
+    for col in CATEGORICAL:
+        categories = df[col].astype('category').cat.categories
+        encoders[col] = {value: i for i, value in enumerate(categories)}
+        df[col + '_enc'] = df[col].map(encoders[col]).fillna(-1).astype(int)
 
-    print(f"Train: {len(train):,} rows jan - feb")
-    print(f"Test:  {len(test):,} rows march")
-    return train, test
+    cuttoff = pd.Timestamp("2026-03-01")
+    train = df[df['fl_date'] < cuttoff]
+    test = df[df['fl_date'] >= cuttoff]
 
-def train_baseline(train, test):
-    lr = LogisticRegression(max_iter=1000, class_weight="balanced")
-    lr.fit(train[FEATURES], train[TARGET])
+    print(f"Train: {len(train):,} flights jan-feb")
+    print(f"Test: {len(test):,} flights mar")
+    return train, test, encoders
 
-    probs = lr.predict_proba(test[FEATURES])[:, 1]
-    print("\nLogistic Regression (baseline)")
-    print(f"  ROC-AUC: {roc_auc_score(test[TARGET], probs):.4f}")
-    print(f"  PR-AUC:  {average_precision_score(test[TARGET], probs):.4f}")
-    print(f"  Brier:   {brier_score_loss(test[TARGET], probs):.4f}")
-    return lr
+def train_quantiles(train, test, target, label):
+    features = NUMERIC + [c + "_enc" for c in CATEGORICAL]
+
+    X_train, y_train = train[features], train[target]
+    X_test, y_test = test[features], test[target]
+
+    models = {}
+    print(f"\n[{label}] Training {len(QUANTILES)} quantile regression models")
+
+    for q in QUANTILES:
+        model = XGBRegressor(
+            objective="reg:quantileerror",
+            quantile_alpha=q,
+            n_estimators=200,
+            max_depth=6,
+            learning_rate=0.1,
+            n_jobs=2,
+        )
+        model.fit(X_train, y_train)
+        models[q] = model
+
+        preds = model.predict(X_test)
+        coverage = (y_test <= preds).mean()
+        print(f"  q={q:<5} coverage {coverage:.3f} (target {q})")
+
+    median_preds = models[0.5].predict(X_test)
+    print(f"  Median MAE: {mean_absolute_error(y_test, median_preds):.2f} minutes")
+
+    return models, features
 
 
-def train_xgboost(train, test):
-    neg = (train[TARGET] == 0).sum()
-    pos = (train[TARGET] == 1).sum()
+def inspect_predictions(test, models, features, target, n=15):
+    """Show predicted quantiles alongside actual outcomes for a sample of flights."""
+    sample = test.sample(n, random_state=42)
+    X = sample[features]
 
-    xgb = XGBClassifier(
-        n_estimators=300,
-        max_depth=6,
-        learning_rate=0.1,
-        scale_pos_weight=neg / pos,
-        eval_metric="logloss",
-        n_jobs=2,
-    )
+    out = pd.DataFrame({
+        "carrier": sample["carrier"].values,
+        "route": sample["route"].values,
+        "hour": sample["dep_hour"].values,
+        "actual": sample[target].values,
+    })
+    for q in QUANTILES:
+        out[f"q{int(q * 100)}"] = models[q].predict(X).round(1)
 
-    model = CalibratedClassifierCV(xgb, method="isotonic", cv=3)
-    model.fit(train[FEATURES], train[TARGET])
+    out["in_range"] = (out["actual"] >= out["q10"]) & (out["actual"] <= out["q90"])
 
-    probs = model.predict_proba(test[FEATURES])[:, 1]
-    print("\nXGBoost (calibrated)")
-    print(f"  ROC-AUC: {roc_auc_score(test[TARGET], probs):.4f}")
-    print(f"  PR-AUC:  {average_precision_score(test[TARGET], probs):.4f}")
-    print(f"  Brier:   {brier_score_loss(test[TARGET], probs):.4f}")
-    return model
+    print(f"\nSample predictions for {target}:")
+    print(out.to_string(index=False))
+    print(f"Actual within predicted 10-90 range: {out['in_range'].mean():.0%}")
+
 
 
 if __name__ == "__main__":
-    train, test = load_data()
-    train_baseline(train, test)
-    model = train_xgboost(train, test)
+    train, test, encoders = load_data()
 
-    joblib.dump({"model": model, "features": FEATURES}, "model/flightguard.pkl")
-    print("\nSaved model/flightguard.pkl")
+    arr_models, features = train_quantiles(train, test, "arr_delay", "arrival")
+    inspect_predictions(test, arr_models, features, "arr_delay")
+    dep_models, _ = train_quantiles(train, test, "dep_delay", "departure")
+
+    joblib.dump(
+        {
+            "arrival_models": arr_models,
+            "departure_models": dep_models,
+            "features": features,
+            "encoders": encoders,
+            "quantiles": QUANTILES,
+        },
+        "model/flightguard_delay.pkl",
+    )
+    print("\nSaved model/flightguard_delay.pkl")
