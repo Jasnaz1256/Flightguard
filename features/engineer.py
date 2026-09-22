@@ -81,6 +81,10 @@ def build():
         .reset_index()
     )
     rotation_lookup.to_parquet("model/rotation_lookup.parquet", index=False)
+    carrier_delay.rename("carrier_avg_delay").to_frame().to_parquet("model/carrier_lookup.parquet")
+    route_delay.rename("route_avg_delay").to_frame().to_parquet("model/route_lookup.parquet")
+    origin_delay.rename("origin_avg_delay").to_frame().to_parquet("model/origin_lookup.parquet")
+    volume.to_frame().to_parquet("model/volume_lookup.parquet")
 
 
     #Fill gaps left by categories absent from the training period

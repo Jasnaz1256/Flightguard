@@ -6,7 +6,7 @@ from xgboost import XGBRegressor
 
 CATEGORICAL = ['carrier', 'origin', 'dest', 'route']
 
-NUMERIC = ['dep_hour', 'day_of_week', 'month', 'leg_number', 'scheduled_turnaround',
+NUMERIC = ['dep_hour', 'day_of_week', 'leg_number', 'scheduled_turnaround',
            'carrier_avg_delay', 'route_avg_delay', 'origin_avg_delay', 'origin_hourly_volume',]
 
 QUANTILES = [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
