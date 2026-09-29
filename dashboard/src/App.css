@@ -215,3 +215,40 @@ button.secondary {
   .grid { grid-template-columns: repeat(2, 1fr); }
   .detail-grid { grid-template-columns: repeat(2, 1fr); }
 }
+.slider-panel {
+  margin-top: 16px;
+  padding: 20px 26px 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.slider-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.slider-panel input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.slider-readout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.slider-readout button {
+  font-size: 13px;
+  padding: 6px 12px;
+}

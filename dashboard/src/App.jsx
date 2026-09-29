@@ -108,6 +108,8 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [bufferOverride, setBufferOverride] = useState(null);
+  const [lastPayload, setLastPayload] = useState(null);
 
   const toPayload = (f) => ({
     carrier: f.carrier.toUpperCase(),
@@ -118,18 +120,14 @@ export default function App() {
     crs_arr_time: Number(f.crs_arr_time),
   });
 
-  const submit = async () => {
+  const runQuery = async (payload, buffer) => {
     setLoading(true);
     setError(null);
-    setResult(null);
     try {
       const response = await fetch(`${API_URL}/predict/connection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inbound: toPayload(inbound),
-          outbound: toPayload(outbound),
-        }),
+        body: JSON.stringify({ ...payload, buffer_override: buffer }),
       });
       if (!response.ok) {
         const detail = await response.json();
@@ -143,6 +141,19 @@ export default function App() {
     }
   };
 
+  const submit = async () => {
+    const payload = { inbound: toPayload(inbound), outbound: toPayload(outbound) };
+    setLastPayload(payload);
+    setBufferOverride(null);
+    setResult(null);
+    await runQuery(payload, null);
+  };
+
+  const onSliderChange = (e) => {
+    const minutes = Number(e.target.value);
+    setBufferOverride(minutes);
+    runQuery(lastPayload, minutes);
+  };
   const fillExample = () => {
     setInbound({ carrier: "AA", origin: "LAX", dest: "ORD", fl_date: "2026-04-14", crs_dep_time: "800", crs_arr_time: "1405" });
     setOutbound({ carrier: "AA", origin: "ORD", dest: "BOS", fl_date: "2026-04-14", crs_dep_time: "1440", crs_arr_time: "1755" });
@@ -166,7 +177,30 @@ export default function App() {
       </div>
 
       {error && <p className="error">{error}</p>}
-      {result && <Result data={result} />}
+      {result && (
+        <>
+          <Result data={result} />
+          <section className="slider-panel">
+            <label>
+              What if the connection were longer?
+              <input
+                type="range"
+                min="20"
+                max="240"
+                step="5"
+                value={bufferOverride ?? result.scheduled_buffer_minutes}
+                onChange={onSliderChange}
+              />
+            </label>
+            <div className="slider-readout">
+              <span>{bufferOverride ?? result.scheduled_buffer_minutes} minutes</span>
+              {bufferOverride !== null && (
+                <button className="secondary" onClick={submit}>Reset to scheduled</button>
+              )}
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
