@@ -3,7 +3,7 @@ from scipy.stats import norm
 import numpy as np
 
 MINIMUM_CONNECTION_TIME = 15   # minutes to deplane and reach the next gate
-DELAY_CORRELATION = 0.4        # inbound and outbound delays move together
+DELAY_CORRELATION = 0.14   # measured from 20,000 March connections
 N_SAMPLES = 10_000
 
 
@@ -57,6 +57,7 @@ def connection_risk(
     quantile_levels:     the probability levels those values correspond to
     scheduled_buffer:    minutes between scheduled arrival and departure
     """
+    np.random.seed(42)
     u_arr, u_dep = correlated_uniforms(n_samples, correlation)
 
     arrival_delays = sample_from_quantiles(
