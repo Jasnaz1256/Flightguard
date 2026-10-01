@@ -42,9 +42,11 @@ LIMIT %(n)s;
 
 def measure_correlation(df):
     """Correlation between the inbound's arrival delay and the outbound's departure delay."""
+    from model.risk import DELAY_CORRELATION
+
     rho = df["inb_actual_arr_delay"].corr(df["outb_actual_dep_delay"])
     print(f"Measured delay correlation: {rho:.3f}")
-    print(f"  (risk.py currently assumes 0.07)")
+    print(f"  (risk.py currently uses {DELAY_CORRELATION:.3f})")
     return rho
 
 
