@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
 
 from api.predictor import predict_connection
 from api.schemas import ConnectionRequest, ConnectionResponse
@@ -30,3 +31,5 @@ def health():
 def predict(request: ConnectionRequest):
     """Assess the risk of missing a single connection."""
     return predict_connection(request.inbound, request.outbound, request.buffer_override)
+
+handler = Mangum(app)
